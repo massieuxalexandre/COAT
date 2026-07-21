@@ -1,10 +1,9 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-import { Button, Modal, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Clock from '../components/Clock';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Button, Image, Modal, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AlarmController, text_checking } from '../components/Audio_text';
-
+import FlipClock from '../components/FlipClock';
 
 interface AlarmeData {
   id : string;
@@ -129,11 +128,14 @@ export default function IndexScreen() {
         audioSource={alarmeQuiSonne ? SOUND_FILES[alarmeQuiSonne.idSon as keyof typeof SOUND_FILES] : SOUND_FILES[1]} 
       />
       {/* 1. Titre et Sous-titre */}
-      <Text style={styles.titre}>COAT</Text>
-      <Text style={styles.sousTitre}>Clock Of All Time</Text>
+      <Image
+      source={require('../../assets/images/COAT.png')}
+      style={styles.coat}
+      resizeMode="contain"
+    />
 
       {/* 2. Ton composant Horloge s'insère ici */}
-      <Clock />
+      <FlipClock />
 
       {/* 3. Bouton Ajouter : CORRIGÉ pour appeler ouvrirPourAjout */}
       <TouchableOpacity style={styles.addButton} onPress={ouvrirPourAjout}>
@@ -283,7 +285,7 @@ export default function IndexScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f2ebde',
     paddingTop: 80, 
     paddingHorizontal: 20, 
   },
@@ -361,7 +363,7 @@ const styles = StyleSheet.create({
   alarmeTime: {
     fontSize: 32,
     fontWeight: '300',
-    color: '#000',
+    color: '#0a0000',
   },
   alarmeTimeDisabled: {
     color: '#C7C7CC',
@@ -409,5 +411,11 @@ const styles = StyleSheet.create({
   picker: {
     width: '100%',
     height: 120,
-  }
+  },
+  coat: {
+  width: 324,
+  height: 200,
+  alignSelf: 'center',
+  marginBottom: 20,
+}
 });
