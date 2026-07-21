@@ -7,19 +7,18 @@ export function text_checking(user_text: string, real_text: string): boolean {
 }
 
 
-export function AlarmController({ isRinging, onStop }: { isRinging: boolean, onStop: () => void }) {
-    // 1. On crée le lecteur en utilisant le nouveau hook (C'est la nouvelle méthode !)
-    const player = useAudioPlayer(require('../../assets/sounds/alarmetest.mp3'));
+export function AlarmController({ isRinging, audioSource }: { isRinging: boolean, audioSource: any }) {
+    // Le lecteur charge le son qu'on lui passe en paramètre
+    const player = useAudioPlayer(audioSource);
     
-    // 2. On utilise useEffect pour surveiller quand l'alarme doit sonner ou s'arrêter
     useEffect(() => {
         if (isRinging) {
-            player.loop = true; // On met en boucle
-            player.play();      // On lance le son
+            player.loop = true; 
+            player.play();     
         } else {
-            player.pause();     // On coupe le son
+            player.pause();   
         }
-    }, [isRinging]); // Ce code se déclenche à chaque fois que isRinging change
+    }, [isRinging, player]); 
 
-    return null; // Ce composant ne dessine rien à l'écran, il fait juste du bruit !
+    return null;
 }

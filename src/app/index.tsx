@@ -3,7 +3,8 @@ import { Picker } from '@react-native-picker/picker';
 import { Button, Modal, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Clock from '../components/Clock';
 import { useState, useEffect } from 'react';
-import { useAudioPlayer } from 'expo-audio';
+import { AlarmController, text_checking } from '../components/Audio_text';
+
 
 interface AlarmeData {
   id : string;
@@ -31,44 +32,48 @@ export default function IndexScreen() {
   const [nameSelect, setNameSelect] = useState("Alarme");
   const [sonSelect, setSonSelect] = useState(1);
   const [snoozeSelect, setSnoozeSelect] = useState(5);
-
+  const [alarmeQuiSonne, setAlarmeQuiSonne] = useState<AlarmeData | null>(null);
   const [alarmes, setAlarmes] = useState<AlarmeData[]>([]);
+  const [texteSaisi, setTexteSaisi] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
       
-      alarmes.forEach(async (alarme) => {
+      alarmes.forEach((alarme) => {
         if (
           alarme.isActive &&
           alarme.time.getHours() === now.getHours() &&
           alarme.time.getMinutes() === now.getMinutes() &&
-          now.getSeconds() === 0
+          now.getSeconds() === 0 &&
+          !alarmeQuiSonne 
         ) {
-          
-          try {
-            // Utilisation de la nouvelle API expo-audio
-            const player = useAudioPlayer(SOUND_FILES[alarme.idSon as keyof typeof SOUND_FILES]);
-            player.play();
-          } catch (error) {
-            console.log("Erreur lors de la lecture du son :", error);
-          }
-
-          // Désactiver l'alarme automatiquement
-          setAlarmes(prevAlarmes =>
-            prevAlarmes.map(a =>
-              a.id === alarme.id ? { ...a, isActive: false } : a
-            )
-          );
+          setAlarmeQuiSonne(alarme);
+          setTexteSaisi("");
         }
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [alarmes]);
+  }, [alarmes, alarmeQuiSonne]);
+
+
+  const TEXTE_DEFI = "Je suis reveille et pret";
+
+  const arreterAlarme = () => {
+    if (text_checking(texteSaisi, TEXTE_DEFI)) {
+      setAlarmes(prev =>
+        prev.map(a => (a.id === alarmeQuiSonne?.id ? { ...a, isActive: false } : a))
+      );
+      setAlarmeQuiSonne(null);
+      setTexteSaisi("");
+    } else {
+      alert("Le texte ne correspond pas, essaye encore !");
+    }
+  };
 
   const ouvrirPourAjout = () => {
-    setAlarmeEnEditionId(null); // Pas d'ID = on crée du neuf
+    setAlarmeEnEditionId(null); 
     setHeureSelect(new Date());
     setNameSelect("Alarme");
     setSonSelect(1);
@@ -119,7 +124,10 @@ export default function IndexScreen() {
   
   return (
     <View style={styles.container}>
-
+      <AlarmController 
+        isRinging={alarmeQuiSonne !== null} 
+        audioSource={alarmeQuiSonne ? SOUND_FILES[alarmeQuiSonne.idSon as keyof typeof SOUND_FILES] : SOUND_FILES[1]} 
+      />
       {/* 1. Titre et Sous-titre */}
       <Text style={styles.titre}>COAT</Text>
       <Text style={styles.sousTitre}>Clock Of All Time</Text>
@@ -169,6 +177,34 @@ export default function IndexScreen() {
         )}
       </View>
 
+      {/*  ÉCRAN DE SONNERIE PLEIN ÉCRAN */}
+      <Modal animationType="fade" visible={alarmeQuiSonne !== null}>
+        <View style={{ flex: 1, backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ fontSize: 50, fontWeight: '900', color: 'white', marginBottom: 20 }}>⏰ DRING !</Text>
+          <Text style={{ fontSize: 18, color: 'white', marginBottom: 30, textAlign: 'center' }}>Recopie ce texte pour arrêter l'alarme :</Text>
+          
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white', backgroundColor: 'rgba(0,0,0,0.2)', padding: 15, borderRadius: 10, marginBottom: 30, textAlign: 'center' }}>
+            "{TEXTE_DEFI}"
+          </Text>
+
+          <TextInput
+            style={{ backgroundColor: 'white', width: '100%', padding: 15, borderRadius: 10, fontSize: 18, marginBottom: 30, textAlign: 'center' }}
+            value={texteSaisi}
+            onChangeText={setTexteSaisi}
+            placeholder="Tape ici..."
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <TouchableOpacity 
+            style={{ backgroundColor: 'white', paddingVertical: 15, paddingHorizontal: 40, borderRadius: 30 }} 
+            onPress={arreterAlarme}
+          >
+            <Text style={{ color: '#FF3B30', fontSize: 20, fontWeight: 'bold' }}>Arrêter l'alarme</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
       <Modal animationType="slide" transparent={true} visible={modalVisible}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -212,9 +248,9 @@ export default function IndexScreen() {
                 <Picker.Item label="Back on 74" value={1} />
                 <Picker.Item label="Cyberkinetic" value={2} />
                 <Picker.Item label="hellNBack" value={3} />
-                <Picker.Item label="iphonealarm" value={3} />
-                <Picker.Item label="Kali Uchis - I Wish you Roses" value={3} />
-                <Picker.Item label="radar" value={3} />
+                <Picker.Item label="iphonealarm" value={4} />
+                <Picker.Item label="Kali Uchis - I Wish you Roses" value={5} />
+                <Picker.Item label="radar" value={6} />
               </Picker>
             </View>
 
