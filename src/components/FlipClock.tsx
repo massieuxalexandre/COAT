@@ -44,7 +44,7 @@ export default function FlipClock() {
 function FlipDigit({ value }: { value: string }) {
   return (
     <View style={styles.digit}>
-      <Text style={styles.digitText}>{value}</Text>
+      <Text style={styles.digitText}>{value}</Text> 
       <View style={styles.middleLine} />
     </View>
   );

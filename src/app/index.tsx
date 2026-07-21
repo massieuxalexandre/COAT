@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Image, Modal, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AlarmController, text_checking } from '../components/Audio_text';
 import FlipClock from '../components/FlipClock';
+import * as Notifications from 'expo-notifications';
 
 interface AlarmeData {
   id : string;
@@ -39,6 +40,14 @@ const PALETTE = {
   ],
 };
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  } as any),
+});
+
 export default function IndexScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -49,6 +58,16 @@ export default function IndexScreen() {
   const [alarmeQuiSonne, setAlarmeQuiSonne] = useState<AlarmeData | null>(null);
   const [alarmes, setAlarmes] = useState<AlarmeData[]>([]);
   const [texteSaisi, setTexteSaisi] = useState("");
+
+  useEffect(() => {
+    async function demanderPermissions() {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        await Notifications.requestPermissionsAsync();
+      }
+    }
+    demanderPermissions();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -71,6 +90,7 @@ export default function IndexScreen() {
     return () => clearInterval(interval);
   }, [alarmes, alarmeQuiSonne]);
 
+  
 
   const TEXTE_DEFI = "Je suis reveille et pret";
 
@@ -102,7 +122,29 @@ export default function IndexScreen() {
     setModalVisible(true);
   };
   
-  const validerAlarme = () => {
+  const validerAlarme = async () => {
+    const maintenant = new Date();
+    const dateAlarme = new Date(heureSelect);
+    dateAlarme.setSeconds(0);
+    
+    let delaiEnSecondes = (dateAlarme.getTime() - maintenant.getTime()) / 1000;
+    if (delaiEnSecondes < 0) {
+      delaiEnSecondes += 24 * 60 * 3600;
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "C'est l'heure !",
+        body: `L'alarme "${nameSelect}" sonne. Ouvre l'application pour la stopper !`,
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: delaiEnSecondes,
+        repeats: false,
+      },
+    });
+
     if (alarmeEnEditionId) {
       setAlarmes(
         alarmes.map((alarme) =>
@@ -192,15 +234,11 @@ export default function IndexScreen() {
                     <Text style={styles.editButtonText}>Modifier</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
-                  style={styles.deleteButton} 
-                  onPress={() => supprimerAlarme(alarme.id)}
-                >
-                  <Image 
-                    source={require('../../assets/images/poubelle.png')} 
-                    style={styles.deleteIcon}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
+                    style={styles.deleteButton} 
+                    onPress={() => supprimerAlarme(alarme.id)}
+                  >
+                    <Image source={require('../../assets/images/poubelle.png')} style={styles.deleteIcon} resizeMode="contain" />
+                  </TouchableOpacity>
 
 
                   <Switch
@@ -519,15 +557,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },deleteButton: {
     backgroundColor: '#581717',
-    padding: 0,
+    padding: 5,
     borderRadius: 8,
     marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   deleteIcon: {
-    width: 15,
-    height: 23,
+    width: 20,
+    height: 20,
   },
 
 });
