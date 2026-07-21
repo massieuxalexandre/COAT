@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 30,
+    marginTop: 0,
     marginBottom: 30,
   },
   group: {

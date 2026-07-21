@@ -11,7 +11,7 @@ interface AlarmeData {
   time : Date;
   isActive : boolean;
   idSon : number;
-  snooze : number;
+  // snooze : number;
 }
 
 const SOUND_FILES = {
@@ -30,7 +30,7 @@ export default function IndexScreen() {
   const [heureSelect, setHeureSelect] = useState(new Date());
   const [nameSelect, setNameSelect] = useState("Alarme");
   const [sonSelect, setSonSelect] = useState(1);
-  const [snoozeSelect, setSnoozeSelect] = useState(5);
+  // const [snoozeSelect, setSnoozeSelect] = useState(5);
   const [alarmeQuiSonne, setAlarmeQuiSonne] = useState<AlarmeData | null>(null);
   const [alarmes, setAlarmes] = useState<AlarmeData[]>([]);
   const [texteSaisi, setTexteSaisi] = useState("");
@@ -76,7 +76,7 @@ export default function IndexScreen() {
     setHeureSelect(new Date());
     setNameSelect("Alarme");
     setSonSelect(1);
-    setSnoozeSelect(5);
+    // setSnoozeSelect(5);
     setModalVisible(true);
   };
 
@@ -85,7 +85,7 @@ export default function IndexScreen() {
     setHeureSelect(alarme.time);
     setNameSelect(alarme.name);
     setSonSelect(alarme.idSon);
-    setSnoozeSelect(alarme.snooze);
+    // setSnoozeSelect(alarme.snooze);
     setModalVisible(true);
   };
   
@@ -94,7 +94,7 @@ export default function IndexScreen() {
       setAlarmes(
         alarmes.map((alarme) =>
           alarme.id === alarmeEnEditionId
-            ? { ...alarme, name: nameSelect, time: heureSelect, idSon: sonSelect, snooze: snoozeSelect }
+            ? { ...alarme, name: nameSelect, time: heureSelect, idSon: sonSelect }
             : alarme
         )
       );
@@ -105,7 +105,7 @@ export default function IndexScreen() {
         time: heureSelect,
         isActive: true,
         idSon: sonSelect,
-        snooze: snoozeSelect,
+        // snooze: snoozeSelect,
       };
       setAlarmes([...alarmes, nouvelleAlarme]);
     }
@@ -119,6 +119,10 @@ export default function IndexScreen() {
         alarme.id === id ? { ...alarme, isActive: !alarme.isActive } : alarme
       )
     );
+  };
+
+  const supprimerAlarme = (id: string) => {
+    setAlarmes(alarmes.filter((alarme) => alarme.id !== id));
   };
   
   return (
@@ -158,7 +162,7 @@ export default function IndexScreen() {
                 <Text style={styles.alarmeName}>{alarme.name}</Text>
               </View>
 
-              {/* CORRIGÉ : Bouton Modifier + Switch regroupés à droite */}
+              {/* Bouton Modifier + Switch regroupés à droite */}
               <View style={styles.alarmeActions}>
                 <TouchableOpacity 
                   style={styles.editButton} 
@@ -166,7 +170,16 @@ export default function IndexScreen() {
                 >
                   <Text style={styles.editButtonText}>Modifier</Text>
                 </TouchableOpacity>
-
+                <TouchableOpacity 
+                  style={styles.deleteButton} 
+                  onPress={() => supprimerAlarme(alarme.id)}
+                >
+                  <Image 
+                    source={require('../../assets/images/poubelle.png')} 
+                    style={styles.deleteIcon}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
                 <Switch
                   value={alarme.isActive}
                   onValueChange={() => basculerAlarme(alarme.id)}
@@ -257,7 +270,7 @@ export default function IndexScreen() {
             </View>
 
             {/* 4. Le Snooze */}
-            <View style={styles.inputGroup}>
+            {/* <View style={styles.inputGroup}>
               <Text style={styles.label}>Rappel (Snooze)</Text>
               <Picker
                 selectedValue={snoozeSelect}
@@ -268,7 +281,7 @@ export default function IndexScreen() {
                 <Picker.Item label="5 minutes" value={5} />
                 <Picker.Item label="10 minutes" value={10} />
               </Picker>
-            </View>
+            </View> */}
 
             <View style={styles.modalButtons}>
               <Button title="Annuler" color="red" onPress={() => setModalVisible(false)} />
@@ -389,6 +402,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  deleteButton: {
+    backgroundColor: '#ee0909',
+    padding: 8,
+    borderRadius: 8,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteIcon: {
+    width: 20,
+    height: 20,
+  },
   inputGroup: {
     width: '100%',
     marginBottom: 15,
@@ -416,6 +441,6 @@ const styles = StyleSheet.create({
   width: 324,
   height: 200,
   alignSelf: 'center',
-  marginBottom: 20,
+  marginBottom: 0,
 }
 });
