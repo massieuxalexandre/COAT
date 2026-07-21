@@ -1,10 +1,11 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useEffect, useState } from 'react';
-import { Image, Modal, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
 import { AlarmController, text_checking } from '../components/Audio_text';
 import FlipClock from '../components/FlipClock';
 import * as Notifications from 'expo-notifications';
+import { setAudioModeAsync } from 'expo-audio';
 
 interface AlarmeData {
   id : string;
@@ -60,13 +61,31 @@ export default function IndexScreen() {
   const [texteSaisi, setTexteSaisi] = useState("");
 
   useEffect(() => {
-    async function demanderPermissions() {
+    async function configurerApp() {
       const { status } = await Notifications.getPermissionsAsync();
       if (status !== 'granted') {
         await Notifications.requestPermissionsAsync();
       }
+
+      await setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+      } as any);
+
+     if (process.env.EXPO_OS === 'android') {
+        await Notifications.setNotificationChannelAsync('alarme-canal', {
+          name: 'Alarmes COAT',
+          importance: Notifications.AndroidImportance.MAX,
+          bypassDnd: true, // <--- C'est ICI que ça se passe pour le mode Ne pas déranger !
+          visibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          vibrationPattern: [0, 500, 500, 500],
+          lightColor: '#FF231F7C',
+          sound: 'default',
+        } as any);
+      }
     }
-    demanderPermissions();
+
+    configurerApp();
   }, []);
 
   useEffect(() => {
@@ -202,7 +221,7 @@ export default function IndexScreen() {
       </TouchableOpacity>
 
       {/* 4. La zone pour la liste des alarmes */}
-      <View style={styles.listContainer}>
+      <ScrollView style={styles.listContainer} contentContainerStyle={{ paddingBottom: 20 }}>
         {alarmes.length === 0 ? (
           <Text style={styles.placeholderText}>Aucune alarme programmée</Text>
         ) : (
@@ -252,7 +271,7 @@ export default function IndexScreen() {
             );
           })
         )}
-      </View>
+      </ScrollView>
 
       {/*  ÉCRAN DE SONNERIE PLEIN ÉCRAN */}
       <Modal animationType="fade" visible={alarmeQuiSonne !== null}>
