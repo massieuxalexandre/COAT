@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 30,
+    marginTop: 0,
     marginBottom: 30,
   },
   group: {
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   digit: {
     width: 65,
     height: 85,
-    backgroundColor: '#E5483B',
+    backgroundColor: '#a73c32',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   separator: {
     fontSize: 50,
     fontWeight: '800',
-    color: '#111111',
+    color: '#2A2420',
     marginHorizontal: 8,
     marginBottom: 22,
   },

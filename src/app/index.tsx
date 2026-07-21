@@ -1,7 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useEffect, useState } from 'react';
-import { Button, Image, Modal, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AlarmController, text_checking } from '../components/Audio_text';
 import FlipClock from '../components/FlipClock';
 
@@ -11,7 +11,6 @@ interface AlarmeData {
   time : Date;
   isActive : boolean;
   idSon : number;
-  snooze : number;
 }
 
 const SOUND_FILES = {
@@ -23,6 +22,23 @@ const SOUND_FILES = {
   6: require('../../assets/sounds/radar.mp3'),
 };
 
+// Palette de l'appli, basée sur la charte graphique (cadre horloge, tuiles, tags d'alarmes)
+const PALETTE = {
+  cream: '#F2EBDE',
+  textDark: '#2B2420',
+  textMuted: '#6B6155',
+  frame: '#a73c32',
+  frameDark: '#2A2420',
+  white: '#FFFFFF',
+  neutralTrack: '#E5DFD3',
+  accents: [
+    { solid: '#3E6E62', tint: '#DCEAE4' }, // sarcelle
+    { solid: '#C1603E', tint: '#F5DED2' }, // terracotta clair
+    { solid: '#3C5A73', tint: '#DCE4EA' }, // bleu ardoise
+    { solid: '#ca7530', tint: '#F2E7CE' }, // moutarde
+  ],
+};
+
 export default function IndexScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -30,7 +46,6 @@ export default function IndexScreen() {
   const [heureSelect, setHeureSelect] = useState(new Date());
   const [nameSelect, setNameSelect] = useState("Alarme");
   const [sonSelect, setSonSelect] = useState(1);
-  const [snoozeSelect, setSnoozeSelect] = useState(5);
   const [alarmeQuiSonne, setAlarmeQuiSonne] = useState<AlarmeData | null>(null);
   const [alarmes, setAlarmes] = useState<AlarmeData[]>([]);
   const [texteSaisi, setTexteSaisi] = useState("");
@@ -76,7 +91,6 @@ export default function IndexScreen() {
     setHeureSelect(new Date());
     setNameSelect("Alarme");
     setSonSelect(1);
-    setSnoozeSelect(5);
     setModalVisible(true);
   };
 
@@ -85,7 +99,6 @@ export default function IndexScreen() {
     setHeureSelect(alarme.time);
     setNameSelect(alarme.name);
     setSonSelect(alarme.idSon);
-    setSnoozeSelect(alarme.snooze);
     setModalVisible(true);
   };
   
@@ -94,7 +107,7 @@ export default function IndexScreen() {
       setAlarmes(
         alarmes.map((alarme) =>
           alarme.id === alarmeEnEditionId
-            ? { ...alarme, name: nameSelect, time: heureSelect, idSon: sonSelect, snooze: snoozeSelect }
+            ? { ...alarme, name: nameSelect, time: heureSelect, idSon: sonSelect }
             : alarme
         )
       );
@@ -105,7 +118,6 @@ export default function IndexScreen() {
         time: heureSelect,
         isActive: true,
         idSon: sonSelect,
-        snooze: snoozeSelect,
       };
       setAlarmes([...alarmes, nouvelleAlarme]);
     }
@@ -120,6 +132,11 @@ export default function IndexScreen() {
       )
     );
   };
+
+  const supprimerAlarme = (id: string) => {
+    setAlarmes(alarmes.filter((alarme) => alarme.id !== id));
+  };
+
   
   return (
     <View style={styles.container}>
@@ -138,7 +155,7 @@ export default function IndexScreen() {
       <FlipClock />
 
       {/* 3. Bouton Ajouter : CORRIGÉ pour appeler ouvrirPourAjout */}
-      <TouchableOpacity style={styles.addButton} onPress={ouvrirPourAjout}>
+      <TouchableOpacity style={styles.addButton} onPress={ouvrirPourAjout} activeOpacity={0.85}>
         <Text style={styles.addButtonText}>Ajouter une alarme</Text>
       </TouchableOpacity>
 
@@ -147,62 +164,80 @@ export default function IndexScreen() {
         {alarmes.length === 0 ? (
           <Text style={styles.placeholderText}>Aucune alarme programmée</Text>
         ) : (
-          alarmes.map((alarme) => (
-            <View key={alarme.id} style={styles.alarmeCard}>
-            
-              {/* CORRIGÉ : Affichage de l'heure et du nom en dessous */}
-              <View style={styles.alarmeInfo}>
-                <Text style={[styles.alarmeTime, !alarme.isActive && styles.alarmeTimeDisabled]}>
-                  {alarme.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-                <Text style={styles.alarmeName}>{alarme.name}</Text>
+          alarmes.map((alarme, index) => {
+            const accent = PALETTE.accents[index % PALETTE.accents.length];
+            return (
+              <View
+                key={alarme.id}
+                style={[
+                  styles.alarmeCard,
+                  { backgroundColor: accent.tint, borderColor: accent.solid },
+                ]}
+              >
+                {/* Affichage de l'heure et du nom en dessous */}
+                <View style={styles.alarmeInfo}>
+                  <Text style={[styles.alarmeTime, { color: accent.solid }, !alarme.isActive && styles.alarmeTimeDisabled]}>
+                    {alarme.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                  <Text style={styles.alarmeName}>{alarme.name}</Text>
+                </View>
+
+                {/* Bouton Modifier + Switch regroupés à droite */}
+                <View style={styles.alarmeActions}>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => ouvrirPourModification(alarme)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.editButtonText}>Modifier</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                  style={styles.deleteButton} 
+                  onPress={() => supprimerAlarme(alarme.id)}
+                >
+                  <Image 
+                    source={require('../../assets/images/poubelle.png')} 
+                    style={styles.deleteIcon}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+
+
+                  <Switch
+                    value={alarme.isActive}
+                    onValueChange={() => basculerAlarme(alarme.id)}
+                    trackColor={{ false: PALETTE.neutralTrack, true: accent.solid }}
+                    thumbColor={PALETTE.white}
+                  />
+                </View>
               </View>
-
-              {/* CORRIGÉ : Bouton Modifier + Switch regroupés à droite */}
-              <View style={styles.alarmeActions}>
-                <TouchableOpacity 
-                  style={styles.editButton} 
-                  onPress={() => ouvrirPourModification(alarme)}
-                >
-                  <Text style={styles.editButtonText}>Modifier</Text>
-                </TouchableOpacity>
-
-                <Switch
-                  value={alarme.isActive}
-                  onValueChange={() => basculerAlarme(alarme.id)}
-                  trackColor={{ false: '#E9E9EB', true: '#34C759' }}
-                />
-              </View>
-
-            </View>
-          ))
+            );
+          })
         )}
       </View>
 
       {/*  ÉCRAN DE SONNERIE PLEIN ÉCRAN */}
       <Modal animationType="fade" visible={alarmeQuiSonne !== null}>
-        <View style={{ flex: 1, backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <Text style={{ fontSize: 50, fontWeight: '900', color: 'white', marginBottom: 20 }}>⏰ DRING !</Text>
-          <Text style={{ fontSize: 18, color: 'white', marginBottom: 30, textAlign: 'center' }}>Recopie ce texte pour arrêter l'alarme :</Text>
-          
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'white', backgroundColor: 'rgba(0,0,0,0.2)', padding: 15, borderRadius: 10, marginBottom: 30, textAlign: 'center' }}>
+        <View style={styles.ringingScreen}>
+          <Text style={styles.ringingTitle}>Ding dong !</Text>
+          <Text style={styles.ringingSubtitle}>Recopie ce texte pour arrêter l'alarme :</Text>
+
+          <Text style={styles.ringingChallenge}>
             "{TEXTE_DEFI}"
           </Text>
 
           <TextInput
-            style={{ backgroundColor: 'white', width: '100%', padding: 15, borderRadius: 10, fontSize: 18, marginBottom: 30, textAlign: 'center' }}
+            style={styles.ringingInput}
             value={texteSaisi}
             onChangeText={setTexteSaisi}
             placeholder="Tape ici..."
+            placeholderTextColor={PALETTE.textMuted}
             autoCapitalize="none"
             autoCorrect={false}
           />
 
-          <TouchableOpacity 
-            style={{ backgroundColor: 'white', paddingVertical: 15, paddingHorizontal: 40, borderRadius: 30 }} 
-            onPress={arreterAlarme}
-          >
-            <Text style={{ color: '#FF3B30', fontSize: 20, fontWeight: 'bold' }}>Arrêter l'alarme</Text>
+          <TouchableOpacity style={styles.ringingButton} onPress={arreterAlarme} activeOpacity={0.85}>
+            <Text style={styles.ringingButtonText}>Arrêter l'alarme</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -210,7 +245,7 @@ export default function IndexScreen() {
       <Modal animationType="slide" transparent={true} visible={modalVisible}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {/* CORRIGÉ : Le titre change dynamiquement */}
+            {/* Le titre change dynamiquement */}
             <Text style={styles.modalTitle}>
               {alarmeEnEditionId ? "Modifier l'alarme" : "Nouvelle Alarme"}
             </Text>
@@ -223,6 +258,7 @@ export default function IndexScreen() {
                 value={nameSelect}
                 onChangeText={setNameSelect}
                 placeholder="Ex: Entraînement"
+                placeholderTextColor={PALETTE.textMuted}
               />
             </View>
 
@@ -256,23 +292,21 @@ export default function IndexScreen() {
               </Picker>
             </View>
 
-            {/* 4. Le Snooze */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Rappel (Snooze)</Text>
-              <Picker
-                selectedValue={snoozeSelect}
-                onValueChange={(itemValue) => setSnoozeSelect(itemValue)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Désactivé" value={0} />
-                <Picker.Item label="5 minutes" value={5} />
-                <Picker.Item label="10 minutes" value={10} />
-              </Picker>
-            </View>
-
             <View style={styles.modalButtons}>
-              <Button title="Annuler" color="red" onPress={() => setModalVisible(false)} />
-              <Button title="Sauvegarder" onPress={validerAlarme} />
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSecondary]}
+                onPress={() => setModalVisible(false)}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.modalButtonSecondaryText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={validerAlarme}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.modalButtonPrimaryText}>Sauvegarder</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -285,40 +319,27 @@ export default function IndexScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f2ebde',
+    backgroundColor: PALETTE.cream,
     paddingTop: 80, 
     paddingHorizontal: 20, 
   },
-  titre: {
-    fontSize: 40,
-    fontWeight: '800',
-    color: '#1A1A1A',
-  },
-  sousTitre: {
-    fontSize: 20,
-    color: '#666',
-    marginTop: 5,
-  },
   addButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: PALETTE.frameDark,
     paddingVertical: 15,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     marginVertical: 30,
   },
   addButtonText: {
-    color: 'white',
+    color: PALETTE.cream,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   listContainer: {
     flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
   },
   placeholderText: {
-    color: '#999',
+    color: PALETTE.textMuted,
     fontStyle: 'italic',
     textAlign: 'center',
     marginTop: 50,
@@ -326,19 +347,20 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(42, 36, 32, 0.5)',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: PALETTE.white,
     padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     alignItems: 'center',
     paddingBottom: 40,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: PALETTE.textDark,
     marginBottom: 15,
   },
   modalButtons: {
@@ -346,31 +368,57 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     marginTop: 20,
-    paddingHorizontal: 30,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  modalButtonSecondary: {
+    backgroundColor: PALETTE.cream,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#E5DFD3',
+  },
+  modalButtonSecondaryText: {
+    color: PALETTE.textDark,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalButtonPrimary: {
+    backgroundColor: PALETTE.frame,
+    marginLeft: 10,
+  },
+  modalButtonPrimaryText: {
+    color: PALETTE.cream,
+    fontSize: 16,
+    fontWeight: '700',
   },
   alarmeCard: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EBEBEB',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderLeftWidth: 4,
+    marginBottom: 12,
   },
   alarmeInfo: {
     flexDirection: 'column',
   },
   alarmeTime: {
-    fontSize: 32,
-    fontWeight: '300',
-    color: '#0a0000',
+    fontSize: 30,
+    fontWeight: '700',
   },
   alarmeTimeDisabled: {
-    color: '#C7C7CC',
+    opacity: 0.4,
   },
   alarmeName: {
     fontSize: 14,
-    color: '#666',
+    color: PALETTE.textMuted,
     marginTop: 2,
   },
   alarmeActions: {
@@ -378,14 +426,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editButton: {
-    backgroundColor: '#E5E5EA',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 10,
     marginRight: 15,
   },
   editButtonText: {
-    color: '#007AFF',
+    color: PALETTE.textDark,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -399,23 +447,87 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: PALETTE.textDark,
     marginBottom: 5,
   },
   textInput: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: PALETTE.cream,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     fontSize: 16,
+    color: PALETTE.textDark,
   },
   picker: {
     width: '100%',
     height: 120,
   },
   coat: {
-  width: 324,
-  height: 200,
-  alignSelf: 'center',
-  marginBottom: 20,
-}
+    width: 324,
+    height: 200,
+    alignSelf: 'center',
+    marginBottom: 0,
+  },
+  ringingScreen: {
+    flex: 1,
+    backgroundColor: PALETTE.frame,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  ringingTitle: {
+    fontSize: 44,
+    fontWeight: '800',
+    color: PALETTE.cream,
+    marginBottom: 20,
+  },
+  ringingSubtitle: {
+    fontSize: 16,
+    color: PALETTE.cream,
+    marginBottom: 24,
+    textAlign: 'center',
+    opacity: 0.9,
+  },
+  ringingChallenge: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: PALETTE.cream,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    padding: 15,
+    borderRadius: 14,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  ringingInput: {
+    backgroundColor: PALETTE.cream,
+    width: '100%',
+    padding: 15,
+    borderRadius: 14,
+    fontSize: 18,
+    marginBottom: 24,
+    textAlign: 'center',
+    color: PALETTE.textDark,
+  },
+  ringingButton: {
+    backgroundColor: PALETTE.cream,
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+  },
+  ringingButtonText: {
+    color: PALETTE.frame,
+    fontSize: 18,
+    fontWeight: '700',
+  },deleteButton: {
+    backgroundColor: '#581717',
+    padding: 0,
+    borderRadius: 8,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteIcon: {
+    width: 15,
+    height: 23,
+  },
+
 });
