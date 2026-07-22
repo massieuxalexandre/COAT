@@ -8,8 +8,11 @@
     "scheme": "coat",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.anonymous.COAT"
+      "icon": "./assets/COATicone.png",
+      "bundleIdentifier": "com.anonymous.COAT",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -47,6 +50,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5c4672b6-5c86-4b81-a6f8-a49629261d44"
+      }
     }
   }
 }
